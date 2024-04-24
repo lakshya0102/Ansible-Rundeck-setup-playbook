@@ -70,3 +70,9 @@
       service:
         name: rundeckd
         state: restarted
+
+
+
+
+
+        cd /usr/local/etc
