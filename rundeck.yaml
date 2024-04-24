@@ -49,30 +49,7 @@
         - { regexp: '^dataSource.username.*', line: 'dataSource.username={{ rundeck_db_user }}' }
         - { regexp: '^dataSource.password.*', line: 'dataSource.password={{ rundeck_db_password }}' }
 
-    - name: Download MySQL Connector/J
-      get_url:
-        url: "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-{{ mysql_connector_version }}.tar.gz"
-        dest: "/tmp/mysql-connector-java-{{ mysql_connector_version }}.tar.gz"
-
-    - name: Extract MySQL Connector/J
-      ansible.builtin.unarchive:
-        src: "/tmp/mysql-connector-java-{{ mysql_connector_version }}.tar.gz"
-        dest: "/tmp"
-        remote_src: yes
-
-    - name: Copy MySQL Connector/J to Rundeck lib directory
-      copy:
-        src: "/tmp/mysql-connector-java-{{ mysql_connector_version }}/mysql-connector-java-{{ mysql_connector_version }}.jar"
-        dest: "/var/lib/rundeck/lib/"
-        mode: '0644'
-
     - name: Restart Rundeck service
       service:
         name: rundeckd
         state: restarted
-
-
-
-
-
-        cd /usr/local/etc
