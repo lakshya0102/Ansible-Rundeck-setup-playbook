@@ -49,6 +49,13 @@
         - { regexp: '^dataSource.username.*', line: 'dataSource.username={{ rundeck_db_user }}' }
         - { regexp: '^dataSource.password.*', line: 'dataSource.password={{ rundeck_db_password }}' }
 
+    - name: Copy framework.properties file
+      copy:
+        src: framework.properties
+        dest: /etc/rundeck/framework.properties
+
+
+
     - name: Restart Rundeck service
       service:
         name: rundeckd
