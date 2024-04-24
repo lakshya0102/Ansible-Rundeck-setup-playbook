@@ -1,0 +1,72 @@
+---
+- name: Install Rundeck on target VMs
+  hosts: rundeck
+  become: yes
+
+  vars:
+    rundeck_db_name: "rundeckdb"
+    rundeck_db_user: "rundeckuser"
+    rundeck_db_password: "Leadings54321@"
+    mysql_connector_version: "8.0.28"
+
+  tasks:
+    - name: Add Rundeck repository key
+      apt_key:
+        url: https://packages.rundeck.com/pagerduty/rundeck/gpgkey
+        state: present
+
+    - name: Add Rundeck APT repository
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      loop:
+        - 'deb https://packages.rundeck.com/pagerduty/rundeck/any/ any main'
+        - 'deb-src https://packages.rundeck.com/pagerduty/rundeck/any/ any main'
+
+    - name: Install Java
+      apt:
+        name: openjdk-11-jdk
+        state: present
+
+    - name: Install Rundeck
+      apt:
+        name: rundeck
+        state: present
+
+    - name: Start Rundeck service
+      service:
+        name: rundeckd
+        state: started
+
+    - name: Update rundeck-config.properties
+      lineinfile:
+        path: /etc/rundeck/rundeck-config.properties
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: '^dataSource.url.*', line: 'dataSource.url=jdbc:mysql://localhost/{{ rundeck_db_name }}?autoReconnect=true&useSSL=false' }
+        - { regexp: '^dataSource.driverClassName.*', line: 'dataSource.driverClassName=com.mysql.jdbc.Driver' }
+        - { regexp: '^dataSource.username.*', line: 'dataSource.username={{ rundeck_db_user }}' }
+        - { regexp: '^dataSource.password.*', line: 'dataSource.password={{ rundeck_db_password }}' }
+
+    - name: Download MySQL Connector/J
+      get_url:
+        url: "https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-{{ mysql_connector_version }}.tar.gz"
+        dest: "/tmp/mysql-connector-java-{{ mysql_connector_version }}.tar.gz"
+
+    - name: Extract MySQL Connector/J
+      ansible.builtin.unarchive:
+        src: "/tmp/mysql-connector-java-{{ mysql_connector_version }}.tar.gz"
+        dest: "/tmp"
+        remote_src: yes
+
+    - name: Copy MySQL Connector/J to Rundeck lib directory
+      copy:
+        src: "/tmp/mysql-connector-java-{{ mysql_connector_version }}/mysql-connector-java-{{ mysql_connector_version }}.jar"
+        dest: "/var/lib/rundeck/lib/"
+        mode: '0644'
+
+    - name: Restart Rundeck service
+      service:
+        name: rundeckd
+        state: restarted
